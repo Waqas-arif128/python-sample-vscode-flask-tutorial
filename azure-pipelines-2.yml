@@ -2,117 +2,55 @@
 # Build and push an image to Azure Container Registry
 # https://docs.microsoft.com/azure/devops/pipelines/languages/docker
 
-
 trigger:
-
 - main
 
-
-
 resources:
-
 - repo: self
 
-
-
 variables:
-
   # Container registry service connection established during pipeline creation
-
   dockerRegistryServiceConnection: 'c5743930-596d-4f5d-96d8-c4550493b337'
-
   imageRepository: 'waqasarifpythonsamplevscodeflasktutorial'
-
   containerRegistry: 'acrpipelinepoc.azurecr.io'
-
   dockerfilePath: '$(Build.SourcesDirectory)/Dockerfile'
-
-  # Set the initial tag to an empty string; it will be set later
-
-  tag: ''
-
-
+# tag: '$(Build.BuildId)'
+  tag: '$(Build.SourceVersion)'
 
   # Agent VM image name
-
   vmImageName: 'ubuntu-latest'
 
-
-
 stages:
-
 - stage: Build
-
   displayName: Build and push stage
-
   jobs:
-
   - job: Build
-
     displayName: Build
-
     pool:
-
       vmImage: $(vmImageName)
-
     steps:
-
-    - script: |
-
-        # Get the Git commit ID and set it as a variable
-
-        GIT_COMMIT=$(git rev-parse --short HEAD)
-
-        echo "##vso[task.setvariable variable=tag]$GIT_COMMIT"
-
-      displayName: 'Get Git Commit ID'
-
-
-
     - task: Docker@2
-
       displayName: Build and push an image to container registry
-
       inputs:
-
         command: buildAndPush
-
         repository: $(imageRepository)
-
         dockerfile: $(dockerfilePath)
-
         containerRegistry: $(dockerRegistryServiceConnection)
-
         tags: |
-
-          $(tag)  # Use the commit ID as the tag
-
+          $(tag)
 
 
 - stage: Deploy
-
   displayName: Deploy stage
-
   jobs:
-
   - job: Deploy
-
     displayName: Deploy to Azure Web App
-
     pool:
-
       vmImage: $(vmImageName)
-
     steps:
-
     - task: AzureWebAppContainer@1
-
       displayName: 'Deploy to Azure Web App'
-
       inputs:
-
         azureSubscription: 'acrpipelinepocserviceconnectionarm'
-
         appName: 'pipelinepocwebapp'
-
-        containers: '$(containerRegistry)/$(imageRepository):$(tag)'  # Use the commit ID as the tag
+        containers: '$(containerRegistry)/$(imageRepository):$(tag)'
